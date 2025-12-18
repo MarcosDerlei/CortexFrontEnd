@@ -1,7 +1,7 @@
 import { Search } from "lucide-react";
 import cortexLogo from "../assets/cortex.jpg";
 
-export default function Header({ search, setSearch, onLogout }) {
+export default function Header({ search, setSearch /* onLogout */ }) {
   return (
     <header
       className="
@@ -29,13 +29,22 @@ export default function Header({ search, setSearch, onLogout }) {
         </div>
       </div>
 
-      {/* BUSCA */}
+      {/* BUSCA — ficará ativa depois */}
       <div className="relative w-72">
-       
-        
+        {/* <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" /> */}
+        {/* 
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar..."
+          className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
+        />
+        */}
       </div>
 
-      {/* BOTÃO SAIR */}
+      {/* BOTÃO SAIR — DESATIVADO TEMPORARIAMENTE */}
+      {/* 
       <button
         onClick={onLogout}
         className="
@@ -50,6 +59,7 @@ export default function Header({ search, setSearch, onLogout }) {
       >
         Sair
       </button>
+      */}
     </header>
   );
 }

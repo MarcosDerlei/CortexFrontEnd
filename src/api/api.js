@@ -4,31 +4,42 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080",
 });
 
-//  envia token
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem("token");
+/*
+=====================================================
+ AUTENTICAÇÃO / JWT — DESATIVADO TEMPORARIAMENTE
+ (Login fake no front + backend liberado)
+ Reativar depois do CRUD estar pronto
+=====================================================
+*/
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+// // envia token no request
+// api.interceptors.request.use(config => {
+//   const token = localStorage.getItem("token");
 
-  return config;
-});
+//   if (token) {
+//     config.headers.Authorization = `Bearer ${token}`;
+//   }
 
-//  trata token expirado
-api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      // token inválido ou expirado
-      localStorage.removeItem("token");
+//   return config;
+// });
 
-      // redireciona para login
-      window.location.href = "/login";
-    }
+// // trata token expirado ou inválido
+// api.interceptors.response.use(
+//   response => response,
+//   error => {
+//     if (
+//       error.response &&
+//       (error.response.status === 401 || error.response.status === 403)
+//     ) {
+//       // token inválido ou expirado
+//       localStorage.removeItem("token");
 
-    return Promise.reject(error);
-  }
-);
+//       // redireciona para login
+//       window.location.href = "/login";
+//     }
+
+//     return Promise.reject(error);
+//   }
+// );
 
 export default api;

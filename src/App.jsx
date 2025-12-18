@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 
 import LoginPage from "./pages/LoginPage";
-import PrivateRoute from "./components/PrivateRoute";
+// import PrivateRoute from "./components/PrivateRoute";
 
 import CategoriaPage from "./pages/CategoriaPage";
 import SubcategoriaPage from "./pages/SubcategoriaPage";
@@ -21,67 +21,37 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* LOGIN (PÚBLICO) */}
+        {/* LOGIN (VISUAL / FAKE) */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* ROTA RAIZ → HOME REAL */}
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <Navigate to="/categorias" />
-            </PrivateRoute>
-          }
-        />
+        {/* ROTA RAIZ → HOME */}
+        <Route path="/" element={<Navigate to="/categorias" />} />
 
         {/* HOME DO SISTEMA */}
-        <Route
-          path="/categorias"
-          element={
-            <PrivateRoute>
-              <CategoriaPage />
-            </PrivateRoute>
-          }
-        />
+        <Route path="/categorias" element={<CategoriaPage />} />
 
         {/* SUBCATEGORIAS */}
         <Route
           path="/categoria/:id/subcategorias"
-          element={
-            <PrivateRoute>
-              <SubcategoriaPage />
-            </PrivateRoute>
-          }
+          element={<SubcategoriaPage />}
         />
 
         {/* ITENS */}
         <Route
           path="/subcategoria/:id/itens"
-          element={
-            <PrivateRoute>
-              <ItemPage />
-            </PrivateRoute>
-          }
+          element={<ItemPage />}
         />
 
         {/* DETALHE DO ITEM */}
         <Route
           path="/item/:sku"
-          element={
-            <PrivateRoute>
-              <ItemDetailPage />
-            </PrivateRoute>
-          }
+          element={<ItemDetailPage />}
         />
 
         {/* HISTÓRICO DE MOVIMENTAÇÕES */}
         <Route
           path="/item/:sku/historico"
-          element={
-            <PrivateRoute>
-              <MovimentoHistoricoPage />
-            </PrivateRoute>
-          }
+          element={<MovimentoHistoricoPage />}
         />
       </Routes>
     </Router>

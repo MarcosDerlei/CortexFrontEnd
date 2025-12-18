@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/api";
 import cortexLogo from "../assets/cortex.jpg";
 
 export default function LoginPage() {
@@ -8,20 +7,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  async function handleLogin(e) {
+  function handleLogin(e) {
     e.preventDefault();
 
-    try {
-      const res = await api.post("/auth/login", {
-        username,
-        password,
-      });
+    // LOGIN FAKE (temporário)
+    localStorage.setItem("logged", "true");
+    localStorage.setItem("username", username || "usuario");
 
-      localStorage.setItem("token", res.data.token);
-      navigate("/categorias");
-    } catch {
-      alert("Usuário ou senha inválidos");
-    }
+    // entra direto no sistema
+    navigate("/categorias");
   }
 
   return (
@@ -30,8 +24,7 @@ export default function LoginPage() {
 
         {/* LADO ESQUERDO — MARCA */}
         <div className="text-white flex flex-col items-start">
-          
-          {/* LOGO COM FUNDO ARREDONDADO */}
+
           <div className="bg-[#FBF7F2] p-6 rounded-3xl mb-10">
             <img
               src={cortexLogo}
@@ -40,17 +33,14 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* SUBTÍTULO */}
           <p className="text-lg text-white/70 tracking-wide uppercase">
             Controle Operacional de Recursos, Tarefas e Execução
           </p>
 
-          {/* DESCRIÇÃO (MAIS ESPAÇADA) */}
           <p className="text-lg text-white/80 mt-12 mb-8 max-w-md">
             Gerencie seu estoque de forma organizada e eficiente
           </p>
 
-          {/* TAGS */}
           <div className="flex gap-3 flex-wrap">
             {[
               "Controle de materiais",
@@ -83,7 +73,7 @@ export default function LoginPage() {
           "
         >
           <h2 className="text-2xl font-semibold mb-2 text-center">
-            Bem-vindo 
+            Bem-vindo
           </h2>
 
           <p className="text-slate-500 text-sm text-center mb-8">
@@ -106,6 +96,7 @@ export default function LoginPage() {
           />
 
           <button
+            type="submit"
             className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-semibold transition"
           >
             Entrar no Sistema
