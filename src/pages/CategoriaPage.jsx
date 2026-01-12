@@ -1,48 +1,146 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CategoriaList from "../components/CategoriaList";
 import Header from "../components/Header";
+import CategoriaResumoModal from "../components/categorias/CategoriaResumoModal";
+import CategoriaEntradaModal from "../components/categorias/CategoriaEntradaModal";
+
+// ✅ helper local
+function ResumoCard({ title, value, highlight = "default" }) {
+  const highlightClass =
+    highlight === "danger"
+      ? "bg-red-50 border-red-200 text-red-800"
+      : highlight === "warning"
+        ? "bg-yellow-50 border-yellow-200 text-yellow-800"
+        : highlight === "success"
+          ? "bg-green-50 border-green-200 text-green-800"
+          : "bg-white border-slate-200 text-slate-900";
+
+  const titleClass =
+    highlight === "danger"
+      ? "text-red-700"
+      : highlight === "warning"
+        ? "text-yellow-700"
+        : highlight === "success"
+          ? "text-green-700"
+          : "text-slate-600";
+
+  return (
+    <div className={`rounded-xl border shadow-sm px-6 py-4 ${highlightClass}`}>
+      <p className={`text-sm font-medium ${titleClass}`}>{title}</p>
+      <p className="text-2xl font-semibold mt-1">{value}</p>
+    </div>
+  );
+}
 
 export default function CategoriaPage() {
   const navigate = useNavigate();
+
   const [search, setSearch] = useState("");
+  const [categoriaResumo, setCategoriaResumo] = useState(null);
+  const [categoriaEntrada, setCategoriaEntrada] = useState(null);
+
+  // ✅ Dashboard resumo (topo)
+  const [resumo, setResumo] = useState(null);
 
   function handleLogout() {
     localStorage.removeItem("token");
     navigate("/login");
   }
 
+  // ✅ Busca resumo do dashboard de categorias
+  useEffect(() => {
+    async function carregarResumo() {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(
+          "http://localhost:8080/dashboard/categorias/resumo",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        setResumo(data);
+      } catch (err) {
+        console.error("Erro ao carregar resumo categorias:", err);
+      }
+    }
+
+    carregarResumo();
+  }, []);
+
   return (
     <>
-      <Header
-        search={search}
-        setSearch={setSearch}
-        onLogout={handleLogout}
-      />
+      <Header search={search} setSearch={setSearch} onLogout={handleLogout} />
 
       <div className="min-h-screen bg-slate-100/80 px-6 py-10">
         <div className="max-w-6xl mx-auto">
+          {/* ✅ Cards de resumo (igual subcategorias) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <ResumoCard
+              title="Total de Categorias"
+              value={resumo?.totalCategorias ?? "-"}
+              highlight="default"
+            />
 
-          <header className="mb-10 text-center">
-            <h1 className="text-4xl font-bold text-slate-900">
-              Categorias
-            </h1>
-            <p className="text-slate-600 mt-2">
-              Escolha uma categoria para navegar pelo estoque
-            </p>
-          </header>
+            <ResumoCard
+              title="Categorias Críticas"
+              value={resumo?.categoriasCriticas ?? "-"}
+              highlight={resumo?.categoriasCriticas > 0 ? "danger" : "success"}
+            />
 
-          <div className="bg-white/80 backdrop-blur rounded-3xl p-10 shadow-sm border border-slate-200/70">
-            <CategoriaList
-              search={search}
-              onSelectCategoria={(cat) => {
-                navigate(`/categoria/${cat.id}/subcategorias`);
-              }}
+            <ResumoCard
+              title="Maior Consumo (30d)"
+              value={resumo?.maiorConsumo30d ?? "-"}
+              highlight="default"
+            />
+
+            <ResumoCard
+              title="Valor em Estoque"
+              value={
+                resumo?.valorTotalEstoque != null
+                  ? new Intl.NumberFormat("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  }).format(Number(resumo.valorTotalEstoque))
+                  : "-"
+              }
+              highlight="default"
             />
           </div>
 
+          {/* ✅ Lista (sem caixa gigante, layout mais solto) */}
+          <div className="bg-transparent">
+            <CategoriaList
+              search={search}
+              onSelectCategoria={(cat) =>
+                navigate(`/categoria/${cat.id}/subcategorias`)
+              }
+              onViewCategoria={(cat) => setCategoriaResumo(cat)}
+              onRegisterEntrada={(cat) => setCategoriaEntrada(cat)}
+              onEditCategoria={(cat) => navigate(`/categorias/${cat.id}/editar`)}
+            />
+          </div>
         </div>
       </div>
+
+      {/* 👁️ Modal de resumo */}
+      <CategoriaResumoModal
+        categoria={categoriaResumo}
+        onClose={() => setCategoriaResumo(null)}
+      />
+
+      {/* ➕ Modal de entrada rápida */}
+      <CategoriaEntradaModal
+        categoria={categoriaEntrada}
+        onClose={() => setCategoriaEntrada(null)}
+      />
     </>
   );
 }

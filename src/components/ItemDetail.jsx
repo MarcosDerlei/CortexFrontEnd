@@ -3,7 +3,6 @@ import api from "../api/api";
 import { useNavigate } from "react-router-dom";
 
 import {
-  Package,
   Layers,
   MapPin,
   Factory,
@@ -14,7 +13,6 @@ import {
 } from "lucide-react";
 
 export default function ItemDetail({ item }) {
-
   const navigate = useNavigate();
 
   const [showMovModal, setShowMovModal] = useState(false);
@@ -102,29 +100,13 @@ export default function ItemDetail({ item }) {
   };
 
   return (
-    <div className="p-8">
-
-      {/* Cabeçalho */}
-      <div className="bg-white shadow-sm rounded-xl p-6 mb-6 border border-gray-200">
-        <div className="flex items-center gap-3 mb-2">
-          <Package className="text-blue-600" size={24} />
-          <h2 className="text-2xl font-semibold text-gray-800">
-            {item.descricao}
-          </h2>
-        </div>
-
-        <p className="text-sm text-gray-500 mt-1">
-          SKU: <span className="font-medium text-gray-700">{item.sku}</span> |{" "}
-          Categoria:{" "}
-          <span className="font-medium text-gray-700">{item.categoria}</span>
-        </p>
-      </div>
+    <div>
+      {/* ✅ Removido: Cabeçalho duplicado */}
 
       {/* Seções */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
         {/* Estoque */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-2">
             <Layers className="text-blue-500" size={18} />
             <h3 className="text-sm font-semibold text-gray-500">
@@ -149,7 +131,7 @@ export default function ItemDetail({ item }) {
         </div>
 
         {/* Valor */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="text-green-600" size={18} />
             <h3 className="text-sm font-semibold text-gray-500">
@@ -163,7 +145,7 @@ export default function ItemDetail({ item }) {
         </div>
 
         {/* Localização */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-2">
             <MapPin className="text-purple-500" size={18} />
             <h3 className="text-sm font-semibold text-gray-500">
@@ -174,7 +156,7 @@ export default function ItemDetail({ item }) {
         </div>
 
         {/* Fornecedor */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-2">
             <Factory className="text-orange-500" size={18} />
             <h3 className="text-sm font-semibold text-gray-500">
@@ -185,7 +167,7 @@ export default function ItemDetail({ item }) {
         </div>
 
         {/* Última Atualização */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="text-gray-600" size={18} />
             <h3 className="text-sm font-semibold text-gray-500">
@@ -193,12 +175,14 @@ export default function ItemDetail({ item }) {
             </h3>
           </div>
           <p className="text-gray-700">
-            {new Date(item.ultimaAtualizacao).toLocaleDateString("pt-BR")}
+            {item.ultimaAtualizacao
+              ? new Date(item.ultimaAtualizacao).toLocaleDateString("pt-BR")
+              : "-"}
           </p>
         </div>
 
         {/* Observação */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-2">
             <ClipboardList className="text-gray-600" size={18} />
             <h3 className="text-sm font-semibold text-gray-500">
@@ -209,7 +193,6 @@ export default function ItemDetail({ item }) {
             {item.observacao || "Sem observações."}
           </p>
         </div>
-
       </div>
 
       {/* Botões */}
@@ -384,7 +367,6 @@ export default function ItemDetail({ item }) {
           </div>
         </div>
       )}
-
     </div>
   );
 }
