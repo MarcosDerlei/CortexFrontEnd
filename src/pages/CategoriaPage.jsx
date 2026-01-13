@@ -4,6 +4,7 @@ import CategoriaList from "../components/CategoriaList";
 import Header from "../components/Header";
 import CategoriaResumoModal from "../components/categorias/CategoriaResumoModal";
 import CategoriaEntradaModal from "../components/categorias/CategoriaEntradaModal";
+import api from "../api/api";
 
 // ✅ helper local
 function ResumoCard({ title, value, highlight = "default" }) {
@@ -52,20 +53,7 @@ export default function CategoriaPage() {
   useEffect(() => {
     async function carregarResumo() {
       try {
-        const token = localStorage.getItem("token");
-
-        const res = await fetch(
-          "http://localhost:8080/dashboard/categorias/resumo",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!res.ok) return;
-
-        const data = await res.json();
+        const { data } = await api.get("/dashboard/categorias/resumo");
         setResumo(data);
       } catch (err) {
         console.error("Erro ao carregar resumo categorias:", err);
@@ -75,72 +63,72 @@ export default function CategoriaPage() {
     carregarResumo();
   }, []);
 
-  return (
-    <>
-      <Header search={search} setSearch={setSearch} onLogout={handleLogout} />
+return (
+  <>
+    <Header search={search} setSearch={setSearch} onLogout={handleLogout} />
 
-      <div className="min-h-screen bg-slate-100/80 px-6 py-10">
-        <div className="max-w-6xl mx-auto">
-          {/* ✅ Cards de resumo (igual subcategorias) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <ResumoCard
-              title="Total de Categorias"
-              value={resumo?.totalCategorias ?? "-"}
-              highlight="default"
-            />
+    <div className="min-h-screen bg-slate-100/80 px-6 py-10">
+      <div className="max-w-6xl mx-auto">
+        {/* ✅ Cards de resumo (igual subcategorias) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <ResumoCard
+            title="Total de Categorias"
+            value={resumo?.totalCategorias ?? "-"}
+            highlight="default"
+          />
 
-            <ResumoCard
-              title="Categorias Críticas"
-              value={resumo?.categoriasCriticas ?? "-"}
-              highlight={resumo?.categoriasCriticas > 0 ? "danger" : "success"}
-            />
+          <ResumoCard
+            title="Categorias Críticas"
+            value={resumo?.categoriasCriticas ?? "-"}
+            highlight={resumo?.categoriasCriticas > 0 ? "danger" : "success"}
+          />
 
-            <ResumoCard
-              title="Maior Consumo (30d)"
-              value={resumo?.maiorConsumo30d ?? "-"}
-              highlight="default"
-            />
+          <ResumoCard
+            title="Maior Consumo (30d)"
+            value={resumo?.maiorConsumo30d ?? "-"}
+            highlight="default"
+          />
 
-            <ResumoCard
-              title="Valor em Estoque"
-              value={
-                resumo?.valorTotalEstoque != null
-                  ? new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  }).format(Number(resumo.valorTotalEstoque))
-                  : "-"
-              }
-              highlight="default"
-            />
-          </div>
+          <ResumoCard
+            title="Valor em Estoque"
+            value={
+              resumo?.valorTotalEstoque != null
+                ? new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(Number(resumo.valorTotalEstoque))
+                : "-"
+            }
+            highlight="default"
+          />
+        </div>
 
-          {/* ✅ Lista (sem caixa gigante, layout mais solto) */}
-          <div className="bg-transparent">
-            <CategoriaList
-              search={search}
-              onSelectCategoria={(cat) =>
-                navigate(`/categoria/${cat.id}/subcategorias`)
-              }
-              onViewCategoria={(cat) => setCategoriaResumo(cat)}
-              onRegisterEntrada={(cat) => setCategoriaEntrada(cat)}
-              onEditCategoria={(cat) => navigate(`/categorias/${cat.id}/editar`)}
-            />
-          </div>
+        {/* ✅ Lista (sem caixa gigante, layout mais solto) */}
+        <div className="bg-transparent">
+          <CategoriaList
+            search={search}
+            onSelectCategoria={(cat) =>
+              navigate(`/categoria/${cat.id}/subcategorias`)
+            }
+            onViewCategoria={(cat) => setCategoriaResumo(cat)}
+            onRegisterEntrada={(cat) => setCategoriaEntrada(cat)}
+            onEditCategoria={(cat) => navigate(`/categorias/${cat.id}/editar`)}
+          />
         </div>
       </div>
+    </div>
 
-      {/* 👁️ Modal de resumo */}
-      <CategoriaResumoModal
-        categoria={categoriaResumo}
-        onClose={() => setCategoriaResumo(null)}
-      />
+    {/* 👁️ Modal de resumo */}
+    <CategoriaResumoModal
+      categoria={categoriaResumo}
+      onClose={() => setCategoriaResumo(null)}
+    />
 
-      {/* ➕ Modal de entrada rápida */}
-      <CategoriaEntradaModal
-        categoria={categoriaEntrada}
-        onClose={() => setCategoriaEntrada(null)}
-      />
-    </>
-  );
+    {/* ➕ Modal de entrada rápida */}
+    <CategoriaEntradaModal
+      categoria={categoriaEntrada}
+      onClose={() => setCategoriaEntrada(null)}
+    />
+  </>
+);
 }
