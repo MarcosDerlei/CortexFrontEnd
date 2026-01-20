@@ -6,14 +6,14 @@ import Header from "../components/Header";
 import Navegacao from "../components/Navegacao";
 
 export default function SubcategoriaPage() {
-  const { id } = useParams();
+  const { categoriaId } = useParams();
   const navigate = useNavigate();
 
   const [subcategorias, setSubcategorias] = useState([]);
 
   useEffect(() => {
     api
-      .get(`/subcategorias/categoria/${id}`)
+      api.get(`/subcategorias/categoria/${categoriaId}`)
       .then((res) => setSubcategorias(res.data))
       .catch((err) => console.error("Erro ao carregar subcategorias:", err));
   }, [id]);
