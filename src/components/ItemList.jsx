@@ -2,20 +2,101 @@ import React, { useEffect, useState } from "react";
 import api from "../api/api";
 import { Package, Warehouse, ShieldAlert } from "lucide-react";
 
+// ✅ Skeleton para card de item
+function ItemCardSkeleton() {
+  return (
+    <div className="bg-white border border-slate-200/70 rounded-3xl p-6 shadow-sm animate-pulse">
+      {/* Topo */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="h-11 w-11 rounded-2xl bg-slate-200" />
+          <div>
+            <div className="h-5 w-32 bg-slate-200 rounded mb-2" />
+            <div className="h-3 w-20 bg-slate-200 rounded" />
+          </div>
+        </div>
+        <div className="h-6 w-16 bg-slate-200 rounded-full" />
+      </div>
+
+      {/* Observação */}
+      <div className="mt-4 space-y-2">
+        <div className="h-4 w-full bg-slate-200 rounded" />
+        <div className="h-4 w-3/4 bg-slate-200 rounded" />
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 gap-3 mt-5">
+        <div className="rounded-2xl border border-slate-200/70 bg-white p-4">
+          <div className="h-3 w-10 bg-slate-200 rounded mb-2" />
+          <div className="h-7 w-12 bg-slate-200 rounded" />
+        </div>
+        <div className="rounded-2xl border border-slate-200/70 bg-white p-4">
+          <div className="h-3 w-16 bg-slate-200 rounded mb-2" />
+          <div className="h-7 w-8 bg-slate-200 rounded" />
+        </div>
+      </div>
+
+      {/* Rodapé */}
+      <div className="mt-5 pt-4 border-t border-slate-200/70 flex items-center justify-between">
+        <div className="h-4 w-12 bg-slate-200 rounded" />
+        <div className="h-4 w-28 bg-slate-200 rounded" />
+      </div>
+    </div>
+  );
+}
+
+// ✅ Grid de skeletons
+function ItemGridSkeleton({ count = 6 }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {Array.from({ length: count }).map((_, i) => (
+        <ItemCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
 export default function ItemList({ subcategoriaId, onSelectItem }) {
   const [itens, setItens] = useState([]);
+  const [loading, setLoading] = useState(true); // ✅ NOVO: estado de loading
 
   useEffect(() => {
-    if (subcategoriaId) {
-      api
-        .get(`/itens/subcategoria/${subcategoriaId}`)
-        .then((res) => setItens(res.data))
-        .catch((err) => console.error("Erro ao carregar itens:", err));
+    let isMounted = true;
+
+    async function carregarItens() {
+      if (!subcategoriaId) return;
+
+      setLoading(true);
+
+      try {
+        const res = await api.get(`/itens/subcategoria/${subcategoriaId}`);
+        if (isMounted) {
+          setItens(res.data);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar itens:", err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
     }
+
+    carregarItens();
+
+    return () => {
+      isMounted = false;
+    };
   }, [subcategoriaId]);
 
-  if (!subcategoriaId)
+  if (!subcategoriaId) {
     return <p className="text-slate-500">Selecione uma subcategoria.</p>;
+  }
+
+  // ✅ SKELETON durante loading (em vez de "Nenhum item encontrado")
+  if (loading) {
+    return <ItemGridSkeleton count={6} />;
+  }
 
   const alertaStyles = {
     OK: "bg-green-100 text-green-700 border-green-200",
@@ -126,7 +207,11 @@ export default function ItemList({ subcategoriaId, onSelectItem }) {
           })}
         </div>
       ) : (
-        <p className="text-slate-500">Nenhum item encontrado nesta subcategoria.</p>
+        // ✅ Só mostra "Nenhum item" DEPOIS de carregar e realmente não ter itens
+        <div className="text-center py-12">
+          <Package size={48} className="mx-auto text-slate-300 mb-4" />
+          <p className="text-slate-500">Nenhum item encontrado nesta subcategoria.</p>
+        </div>
       )}
     </div>
   );
