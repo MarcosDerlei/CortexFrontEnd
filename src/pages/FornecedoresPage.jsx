@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import api from "../api/api";
 import Navegacao from "../components/Navegacao";
 import MenuRapido from "../components/MenuRapido";
-import { Plus, Search, Phone, Trash2, Pencil, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Search, Phone, Trash2, Pencil, ToggleLeft, ToggleRight, Factory } from "lucide-react";
 
 function Input({ ...props }) {
   return (
@@ -29,6 +29,42 @@ function BadgeAtivo({ ativo }) {
     >
       {ativo ? "ATIVO" : "INATIVO"}
     </span>
+  );
+}
+
+// ✅ Skeleton para card de fornecedor
+function FornecedorCardSkeleton() {
+  return (
+    <div className="bg-white/80 backdrop-blur rounded-3xl border border-slate-200/70 p-6 shadow-sm animate-pulse">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-6 w-40 bg-slate-200 rounded" />
+            <div className="h-5 w-16 bg-slate-200 rounded-full" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 bg-slate-200 rounded" />
+            <div className="h-4 w-32 bg-slate-200 rounded" />
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <div className="h-10 w-20 bg-slate-200 rounded-2xl" />
+          <div className="h-10 w-20 bg-slate-200 rounded-2xl" />
+          <div className="h-10 w-20 bg-slate-200 rounded-2xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ Lista de skeletons
+function FornecedorListSkeleton({ count = 5 }) {
+  return (
+    <div className="grid grid-cols-1 gap-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <FornecedorCardSkeleton key={i} />
+      ))}
+    </div>
   );
 }
 
@@ -300,9 +336,11 @@ export default function FornecedoresPage() {
         {/* Listagem */}
         <div className="mt-8">
           {loading ? (
-            <div className="text-slate-600">Carregando fornecedores...</div>
+            // ✅ SKELETON durante loading
+            <FornecedorListSkeleton count={5} />
           ) : fornecedoresFiltrados.length === 0 ? (
-            <div className="bg-white/80 backdrop-blur rounded-3xl border border-slate-200/70 p-8">
+            <div className="bg-white/80 backdrop-blur rounded-3xl border border-slate-200/70 p-8 text-center">
+              <Factory size={40} className="mx-auto text-slate-300 mb-3" />
               <p className="text-slate-700 font-semibold">Nenhum fornecedor encontrado.</p>
               <p className="text-sm text-slate-500 mt-1">
                 Clique em <b>Novo fornecedor</b> para cadastrar o primeiro.

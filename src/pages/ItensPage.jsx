@@ -7,6 +7,31 @@ import MenuRapido from "../components/MenuRapido";
 
 import { Package, Search, Barcode } from "lucide-react";
 
+// ✅ Skeleton para card de item
+function ItemCardSkeleton() {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm animate-pulse">
+      <div className="h-5 w-36 bg-slate-200 rounded mb-3" />
+      <div className="flex items-center gap-2 mb-2">
+        <div className="h-4 w-4 bg-slate-200 rounded" />
+        <div className="h-3 w-24 bg-slate-200 rounded" />
+      </div>
+      <div className="h-3 w-20 bg-slate-200 rounded" />
+    </div>
+  );
+}
+
+// ✅ Grid de skeletons
+function ItemGridSkeleton({ count = 9 }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {Array.from({ length: count }).map((_, i) => (
+        <ItemCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
 export default function ItensPage() {
   const navigate = useNavigate();
 
@@ -17,10 +42,6 @@ export default function ItensPage() {
   async function carregarItens() {
     try {
       setLoading(true);
-
-      // ✅ precisa existir esse endpoint no backend:
-      // GET /itens
-      // ou tu pode ajustar conforme teu backend
       const { data } = await api.get("/itens");
       setItens(data || []);
     } catch (err) {
@@ -100,9 +121,11 @@ export default function ItensPage() {
           {/* ✅ Lista */}
           <div className="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-sm border border-slate-200/70">
             {loading ? (
-              <p className="text-sm text-slate-500">Carregando itens...</p>
+              // ✅ SKELETON durante loading
+              <ItemGridSkeleton count={9} />
             ) : itensFiltrados.length === 0 ? (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center">
+                <Package size={40} className="mx-auto text-slate-300 mb-3" />
                 <p className="text-sm font-semibold text-slate-900">
                   Nenhum item encontrado.
                 </p>

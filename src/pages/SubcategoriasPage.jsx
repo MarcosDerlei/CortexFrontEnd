@@ -7,6 +7,27 @@ import MenuRapido from "../components/MenuRapido";
 
 import { Layers, Search } from "lucide-react";
 
+// ✅ Skeleton para card de subcategoria
+function SubcategoriaCardSkeleton() {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm animate-pulse">
+      <div className="h-5 w-32 bg-slate-200 rounded mb-3" />
+      <div className="h-3 w-24 bg-slate-200 rounded" />
+    </div>
+  );
+}
+
+// ✅ Grid de skeletons
+function SubcategoriaGridSkeleton({ count = 9 }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {Array.from({ length: count }).map((_, i) => (
+        <SubcategoriaCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
 export default function SubcategoriasPage() {
   const navigate = useNavigate();
 
@@ -17,8 +38,6 @@ export default function SubcategoriasPage() {
   async function carregarSubcategorias() {
     try {
       setLoading(true);
-
-      // 🔥 endpoint global: listar todas subcategorias
       const { data } = await api.get("/subcategorias");
       setSubcategorias(data || []);
     } catch (err) {
@@ -97,9 +116,11 @@ export default function SubcategoriasPage() {
         {/* ✅ Lista */}
         <div className="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-sm border border-slate-200/70">
           {loading ? (
-            <p className="text-sm text-slate-500">Carregando subcategorias...</p>
+            // ✅ SKELETON durante loading
+            <SubcategoriaGridSkeleton count={9} />
           ) : subcategoriasFiltradas.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center">
+              <Layers size={40} className="mx-auto text-slate-300 mb-3" />
               <p className="text-sm font-semibold text-slate-900">
                 Nenhuma subcategoria encontrada.
               </p>

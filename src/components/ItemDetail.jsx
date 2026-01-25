@@ -20,6 +20,39 @@ import {
 import GerarPedidoTab from "./itens/pedido/GerarPedidoTab";
 import ModalHistorico from "./ModalHistorico";
 
+// ✅ Skeleton para cards de informação
+function ItemCardSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 animate-pulse">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="h-5 w-5 bg-slate-200 rounded" />
+        <div className="h-4 w-32 bg-slate-200 rounded" />
+      </div>
+      <div className="h-6 w-24 bg-slate-200 rounded" />
+    </div>
+  );
+}
+
+// ✅ Skeleton completo
+function ItemDetailSkeleton() {
+  return (
+    <div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <ItemCardSkeleton key={i} />
+        ))}
+      </div>
+
+      <div className="mt-10 flex flex-wrap gap-3 justify-end animate-pulse">
+        <div className="h-10 w-28 bg-slate-200 rounded-xl" />
+        <div className="h-10 w-28 bg-slate-200 rounded-xl" />
+        <div className="h-10 w-32 bg-slate-200 rounded-xl" />
+        <div className="h-10 w-32 bg-slate-200 rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
 export default function ItemDetail({ item }) {
   const navigate = useNavigate();
 
@@ -83,7 +116,8 @@ export default function ItemDetail({ item }) {
     }
   }
 
-  if (!itemAtual) return <p>Carregando...</p>;
+  // ✅ SKELETON em vez de "Carregando..."
+  if (!itemAtual) return <ItemDetailSkeleton />;
 
   // 🔸 Barra de estoque
   const estoqueMinimo = itemAtual.pontoReposicao ?? 0;
@@ -215,7 +249,7 @@ export default function ItemDetail({ item }) {
             <MapPin className="text-purple-500" size={18} />
             <h3 className="text-sm font-semibold text-gray-500">Localização</h3>
           </div>
-          <p className="text-gray-700">{itemAtual.localizacao}</p>
+          <p className="text-gray-700">{itemAtual.localizacao || "-"}</p>
         </div>
 
         {/* Fornecedor */}
@@ -224,7 +258,7 @@ export default function ItemDetail({ item }) {
             <Factory className="text-orange-500" size={18} />
             <h3 className="text-sm font-semibold text-gray-500">Fornecedor</h3>
           </div>
-          <p className="text-gray-700">{itemAtual.fornecedor}</p>
+          <p className="text-gray-700">{itemAtual.fornecedor || "-"}</p>
         </div>
 
         {/* Última Atualização */}
