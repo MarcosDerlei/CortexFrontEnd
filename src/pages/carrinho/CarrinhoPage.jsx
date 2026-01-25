@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import Navegacao from "../../components/Navegacao";
 import MenuRapido from "../../components/MenuRapido";
-import { ShoppingCart, Check, X, Send, Clock, CheckCircle } from "lucide-react";
+import { ShoppingCart, Check, X, Send, Clock, CheckCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 // ✅ Skeleton para header do carrinho
@@ -73,7 +73,7 @@ function CarrinhoSkeleton() {
 }
 
 // ✅ Modal de confirmação após enviar pedido
-function ModalConfirmarEnvio({ open, onClose, onConfirm, fornecedorNome }) {
+function ModalConfirmarEnvio({ open, onClose, onConfirm, fornecedorNome, loading }) {
   if (!open) return null;
 
   return (
@@ -103,16 +103,22 @@ function ModalConfirmarEnvio({ open, onClose, onConfirm, fornecedorNome }) {
           <div className="flex gap-3 justify-center">
             <button
               onClick={onClose}
-              className="px-5 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold"
+              disabled={loading}
+              className="px-5 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-50"
             >
               Não, manter rascunho
             </button>
 
             <button
               onClick={onConfirm}
-              className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold inline-flex items-center gap-2"
+              disabled={loading}
+              className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold inline-flex items-center gap-2 disabled:opacity-50"
             >
-              <Check size={18} />
+              {loading ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Check size={18} />
+              )}
               Sim, marcar como enviado
             </button>
           </div>
@@ -152,10 +158,8 @@ export default function CarrinhoPage() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const [carrinho, setCarrinho] = useState(null);
-
-  // ✅ Estado para controlar status por fornecedor (local)
-  const [statusPorFornecedor, setStatusPorFornecedor] = useState({});
 
   // ✅ Modal de confirmação de envio
   const [modalEnvio, setModalEnvio] = useState({
@@ -169,16 +173,6 @@ export default function CarrinhoPage() {
     try {
       const { data } = await api.get("/compras/carrinho");
       setCarrinho(data);
-
-      // Inicializa status por fornecedor como RASCUNHO
-      if (data?.itens?.length) {
-        const fornecedorIds = [...new Set(data.itens.map((i) => i.fornecedorId))];
-        const statusInicial = {};
-        fornecedorIds.forEach((id) => {
-          statusInicial[id] = statusPorFornecedor[id] || "RASCUNHO";
-        });
-        setStatusPorFornecedor(statusInicial);
-      }
     } catch (err) {
       console.error("Erro ao carregar carrinho:", err);
       setCarrinho(null);
@@ -198,7 +192,7 @@ export default function CarrinhoPage() {
     });
   }
 
-  // ✅ Agrupar itens por fornecedor
+  // ✅ Agrupar itens por fornecedor E calcular status do grupo
   const grupos = useMemo(() => {
     if (!carrinho?.itens?.length) return [];
 
@@ -216,7 +210,15 @@ export default function CarrinhoPage() {
       map.get(item.fornecedorId).itens.push(item);
     });
 
-    return Array.from(map.values());
+    // ✅ Calcula o status do grupo baseado nos itens
+    return Array.from(map.values()).map((grupo) => {
+      // Se QUALQUER item foi enviado, o grupo é ENVIADO
+      const algumEnviado = grupo.itens.some((i) => i.statusEnvio === "ENVIADO");
+      return {
+        ...grupo,
+        status: algumEnviado ? "ENVIADO" : "RASCUNHO",
+      };
+    });
   }, [carrinho]);
 
   function gerarMensagemFornecedor(fornecedorNome, itens) {
@@ -254,18 +256,23 @@ export default function CarrinhoPage() {
     });
   }
 
-  // ✅ Marcar pedido como ENVIADO
-  function marcarComoEnviado() {
-    setStatusPorFornecedor((prev) => ({
-      ...prev,
-      [modalEnvio.fornecedorId]: "ENVIADO",
-    }));
-
-    toast.success(`Pedido para ${modalEnvio.fornecedorNome} marcado como enviado!`);
-    setModalEnvio({ open: false, fornecedorId: null, fornecedorNome: "" });
+  // ✅ Marcar pedido como ENVIADO no backend
+  async function marcarComoEnviado() {
+    setActionLoading(true);
+    try {
+      await api.post(`/compras/carrinho/enviar/${modalEnvio.fornecedorId}`);
+      toast.success(`Pedido para ${modalEnvio.fornecedorNome} marcado como enviado!`);
+      setModalEnvio({ open: false, fornecedorId: null, fornecedorNome: "" });
+      await carregarCarrinho(); // ✅ Recarrega para pegar o novo status
+    } catch (err) {
+      console.error("Erro ao marcar como enviado:", err);
+      toast.error("Erro ao marcar pedido como enviado.");
+    } finally {
+      setActionLoading(false);
+    }
   }
 
-  // ✅ Confirmar recebimento do pedido (fornecedor confirmou)
+  // ✅ Confirmar recebimento do pedido (fornecedor confirmou) - REMOVE do carrinho
   async function confirmarPedido(grupo) {
     const confirmar = window.confirm(
       `Confirmar que o fornecedor "${grupo.fornecedorNome}" confirmou o pedido?\n\nIsso irá remover os itens do carrinho.`
@@ -273,29 +280,38 @@ export default function CarrinhoPage() {
 
     if (!confirmar) return;
 
+    setActionLoading(true);
     try {
-      // Remove todos os itens desse fornecedor do carrinho
-      for (const item of grupo.itens) {
-        await api.delete(`/compras/carrinho/itens/${item.id}`);
-      }
-
+      await api.post(`/compras/carrinho/confirmar/${grupo.fornecedorId}`);
       toast.success(`Pedido de ${grupo.fornecedorNome} confirmado e removido do carrinho!`);
-
-      // Recarrega carrinho
-      await carregarCarrinho();
+      await carregarCarrinho(); // ✅ Recarrega carrinho
     } catch (err) {
       console.error("Erro ao confirmar pedido:", err);
       toast.error("Erro ao confirmar pedido.");
+    } finally {
+      setActionLoading(false);
     }
   }
 
   // ✅ Cancelar pedido (volta para rascunho)
-  function cancelarPedido(grupo) {
-    setStatusPorFornecedor((prev) => ({
-      ...prev,
-      [grupo.fornecedorId]: "RASCUNHO",
-    }));
-    toast.info(`Pedido de ${grupo.fornecedorNome} voltou para rascunho.`);
+  async function cancelarPedido(grupo) {
+    const confirmar = window.confirm(
+      `Cancelar o envio do pedido para "${grupo.fornecedorNome}"?\n\nO pedido voltará para rascunho.`
+    );
+
+    if (!confirmar) return;
+
+    setActionLoading(true);
+    try {
+      await api.post(`/compras/carrinho/cancelar-envio/${grupo.fornecedorId}`);
+      toast.info(`Pedido de ${grupo.fornecedorNome} voltou para rascunho.`);
+      await carregarCarrinho(); // ✅ Recarrega carrinho
+    } catch (err) {
+      console.error("Erro ao cancelar envio:", err);
+      toast.error("Erro ao cancelar envio.");
+    } finally {
+      setActionLoading(false);
+    }
   }
 
   async function removerItem(itemCarrinhoId) {
@@ -374,7 +390,7 @@ export default function CarrinhoPage() {
                       0
                     );
 
-                    const status = statusPorFornecedor[grupo.fornecedorId] || "RASCUNHO";
+                    const status = grupo.status;
 
                     return (
                       <div
@@ -382,8 +398,6 @@ export default function CarrinhoPage() {
                         className={`rounded-2xl border p-5 ${
                           status === "ENVIADO"
                             ? "border-blue-200 bg-blue-50/50"
-                            : status === "CONFIRMADO"
-                            ? "border-green-200 bg-green-50/50"
                             : "border-slate-200 bg-white"
                         }`}
                       >
@@ -406,7 +420,8 @@ export default function CarrinhoPage() {
                             {status === "RASCUNHO" && (
                               <button
                                 onClick={() => enviarPedidoWhatsApp(grupo)}
-                                className="px-5 py-3 rounded-xl text-white font-semibold shadow-sm transition bg-blue-600 hover:bg-blue-700 inline-flex items-center gap-2"
+                                disabled={actionLoading}
+                                className="px-5 py-3 rounded-xl text-white font-semibold shadow-sm transition bg-blue-600 hover:bg-blue-700 inline-flex items-center gap-2 disabled:opacity-50"
                               >
                                 <Send size={16} />
                                 Gerar pedido (WhatsApp)
@@ -417,15 +432,21 @@ export default function CarrinhoPage() {
                               <>
                                 <button
                                   onClick={() => confirmarPedido(grupo)}
-                                  className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold inline-flex items-center gap-2"
+                                  disabled={actionLoading}
+                                  className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold inline-flex items-center gap-2 disabled:opacity-50"
                                 >
-                                  <CheckCircle size={16} />
+                                  {actionLoading ? (
+                                    <Loader2 size={16} className="animate-spin" />
+                                  ) : (
+                                    <CheckCircle size={16} />
+                                  )}
                                   Confirmar Recebimento
                                 </button>
 
                                 <button
                                   onClick={() => enviarPedidoWhatsApp(grupo)}
-                                  className="px-4 py-2 rounded-xl border border-blue-200 bg-white hover:bg-blue-50 text-blue-700 font-semibold inline-flex items-center gap-2"
+                                  disabled={actionLoading}
+                                  className="px-4 py-2 rounded-xl border border-blue-200 bg-white hover:bg-blue-50 text-blue-700 font-semibold inline-flex items-center gap-2 disabled:opacity-50"
                                 >
                                   <Send size={16} />
                                   Reenviar
@@ -433,7 +454,8 @@ export default function CarrinhoPage() {
 
                                 <button
                                   onClick={() => cancelarPedido(grupo)}
-                                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold inline-flex items-center gap-2"
+                                  disabled={actionLoading}
+                                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold inline-flex items-center gap-2 disabled:opacity-50"
                                 >
                                   <X size={16} />
                                   Cancelar
@@ -507,6 +529,7 @@ export default function CarrinhoPage() {
         onClose={() => setModalEnvio({ open: false, fornecedorId: null, fornecedorNome: "" })}
         onConfirm={marcarComoEnviado}
         fornecedorNome={modalEnvio.fornecedorNome}
+        loading={actionLoading}
       />
     </div>
   );
