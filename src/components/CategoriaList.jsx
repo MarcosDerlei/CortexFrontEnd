@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import api from "../api/api";
 import CategoriaCard from "./categorias/CategoriaCard";
+import { getDashboardCategorias } from "../services/categoriaDashboardService";
 
 export default function CategoriaList({
   onSelectCategoria,
@@ -12,9 +12,11 @@ export default function CategoriaList({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api
-      .get("/dashboard/categorias")
-      .then((res) => setCategorias(res.data))
+    getDashboardCategorias()
+      .then((res) => {
+        // 🔥 agora o backend retorna um DTO único
+        setCategorias(res.data.categorias);
+      })
       .catch((err) => {
         console.error("Erro ao buscar dashboard de categorias", err);
       })

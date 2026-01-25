@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../api/api";
+import { getDashboardSubcategorias } from "../services/subcategoriaDashboardService";
 import SubcategoriaList from "../components/SubcategoriaList";
 import Header from "../components/Header";
 import Navegacao from "../components/Navegacao";
@@ -10,13 +10,23 @@ export default function SubcategoriaPage() {
   const navigate = useNavigate();
 
   const [subcategorias, setSubcategorias] = useState([]);
+  const [resumo, setResumo] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api
-      api.get(`/subcategorias/categoria/${categoriaId}`)
-      .then((res) => setSubcategorias(res.data))
-      .catch((err) => console.error("Erro ao carregar subcategorias:", err));
-  }, [id]);
+    if (!categoriaId) return;
+
+    getDashboardSubcategorias(categoriaId)
+      .then((data) => {
+        // ajuste conforme o shape que seu backend retorna
+        setSubcategorias(data.subcategorias);
+        setResumo(data.resumo);
+      })
+      .catch((err) =>
+        console.error("Erro ao carregar dashboard de subcategorias:", err)
+      )
+      .finally(() => setLoading(false));
+  }, [categoriaId]);
 
   return (
     <>
@@ -24,21 +34,31 @@ export default function SubcategoriaPage() {
 
       <div className="min-h-screen bg-slate-100/80 px-6 py-10">
         <div className="max-w-6xl mx-auto">
-          {/* BARRA VOLTAR / INÍCIO */}
           <div className="mb-6">
-            {/* ajuste o homePath se seu "início" for /categorias */}
             <Navegacao backPath={`/categorias`} homePath={`/categorias`} />
           </div>
 
-          {/* TÍTULO */}
           <header className="mb-10 text-center">
-            <h1 className="text-4xl font-bold text-slate-900">Subcategorias</h1>
+            <h1 className="text-4xl font-bold text-slate-900">
+              Subcategorias
+            </h1>
             <p className="text-slate-600 mt-2">
               Escolha uma subcategoria para navegar pelo estoque
             </p>
           </header>
 
-          {/* CONTAINER */}
+          {/* RESUMO (opcional, mas já preparado) */}
+          {resumo && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="bg-white rounded-xl p-4 shadow-sm">
+                <span className="text-sm text-slate-500">
+                  Total subcategorias
+                </span>
+                <p className="text-2xl font-bold">{resumo.total}</p>
+              </div>
+            </div>
+          )}
+
           <div
             className="
               bg-white/80
@@ -49,12 +69,18 @@ export default function SubcategoriaPage() {
               border border-slate-200/70
             "
           >
-            <SubcategoriaList
-              subcategorias={subcategorias}
-              onSelectSubcategoria={(sub) =>
-                navigate(`/subcategoria/${sub.id}/itens`)
-              }
-            />
+            {loading ? (
+              <p className="text-center text-slate-500">
+                Carregando subcategorias...
+              </p>
+            ) : (
+              <SubcategoriaList
+                subcategorias={subcategorias}
+                onSelectSubcategoria={(sub) =>
+                  navigate(`/subcategoria/${sub.id}/itens`)
+                }
+              />
+            )}
           </div>
         </div>
       </div>

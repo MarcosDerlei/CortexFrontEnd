@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import CategoriaList from "../components/CategoriaList";
+
 import Header from "../components/Header";
+import CategoriaList from "../components/CategoriaList";
 import CategoriaResumoModal from "../components/categorias/CategoriaResumoModal";
 import CategoriaEntradaModal from "../components/categorias/CategoriaEntradaModal";
-import api from "../api/api";
-
 import MenuRapido from "../components/MenuRapido";
 
-// ✅ helper local
+import api from "../api/api";
+
+// 🔹 Card de resumo
 function ResumoCard({ title, value, highlight = "default" }) {
   const highlightClass =
     highlight === "danger"
@@ -40,30 +41,43 @@ export default function CategoriaPage() {
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   const [categoriaResumo, setCategoriaResumo] = useState(null);
   const [categoriaEntrada, setCategoriaEntrada] = useState(null);
-
-  // ✅ Dashboard resumo (topo)
-  const [resumo, setResumo] = useState(null);
 
   function handleLogout() {
     localStorage.removeItem("token");
     navigate("/login");
   }
 
-  // ✅ Busca resumo do dashboard de categorias
+  // ✅ ÚNICA CHAMADA DO DASHBOARD
   useEffect(() => {
-    async function carregarResumo() {
+    async function carregarDashboard() {
       try {
-        const { data } = await api.get("/dashboard/categorias/resumo");
-        setResumo(data);
+        const { data } = await api.get("/dashboard/categorias");
+        setDashboard(data);
       } catch (err) {
-        console.error("Erro ao carregar resumo categorias:", err);
+        console.error("Erro ao carregar dashboard de categorias:", err);
+      } finally {
+        setLoading(false);
       }
     }
 
-    carregarResumo();
+    carregarDashboard();
   }, []);
+
+  if (loading) {
+    return (
+      <p className="text-center text-slate-500 mt-10">
+        Carregando dashboard de categorias...
+      </p>
+    );
+  }
+
+  const resumo = dashboard?.resumo;
+  const categorias = dashboard?.categorias ?? [];
 
   return (
     <>
@@ -71,12 +85,13 @@ export default function CategoriaPage() {
 
       <div className="min-h-screen bg-slate-100/80 px-6 py-10">
         <div className="max-w-6xl mx-auto">
-          {/* ✅ MENU RÁPIDO (HOME NÃO PRECISA DE VOLTAR/INÍCIO) */}
+
+          {/* MENU RÁPIDO */}
           <div className="mt-2">
             <MenuRapido />
           </div>
 
-          {/* ✅ Cards de resumo */}
+          {/* 🔹 RESUMO */}
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
             <ResumoCard
               title="Total de Categorias"
@@ -86,7 +101,9 @@ export default function CategoriaPage() {
             <ResumoCard
               title="Categorias Críticas"
               value={resumo?.categoriasCriticas ?? "-"}
-              highlight={resumo?.categoriasCriticas > 0 ? "danger" : "success"}
+              highlight={
+                resumo?.categoriasCriticas > 0 ? "danger" : "success"
+              }
             />
 
             <ResumoCard
@@ -107,28 +124,29 @@ export default function CategoriaPage() {
             />
           </div>
 
-          {/* ✅ Lista */}
-          <div className="bg-transparent">
-            <CategoriaList
-              search={search}
-              onSelectCategoria={(cat) =>
-                navigate(`/categoria/${cat.id}/subcategorias`)
-              }
-              onViewCategoria={(cat) => setCategoriaResumo(cat)}
-              onRegisterEntrada={(cat) => setCategoriaEntrada(cat)}
-              onEditCategoria={(cat) => navigate(`/categorias/${cat.id}/editar`)}
-            />
-          </div>
+          {/* 🔹 LISTA DE CATEGORIAS */}
+          <CategoriaList
+            categorias={categorias}
+            search={search}
+            onSelectCategoria={(cat) =>
+              navigate(`/categoria/${cat.id}/subcategorias`)
+            }
+            onViewCategoria={(cat) => setCategoriaResumo(cat)}
+            onRegisterEntrada={(cat) => setCategoriaEntrada(cat)}
+            onEditCategoria={(cat) =>
+              navigate(`/categorias/${cat.id}/editar`)
+            }
+          />
         </div>
       </div>
 
-      {/* 👁️ Modal de resumo */}
+      {/* 👁️ MODAL RESUMO */}
       <CategoriaResumoModal
         categoria={categoriaResumo}
         onClose={() => setCategoriaResumo(null)}
       />
 
-      {/* ➕ Modal de entrada rápida */}
+      {/* ➕ MODAL ENTRADA */}
       <CategoriaEntradaModal
         categoria={categoriaEntrada}
         onClose={() => setCategoriaEntrada(null)}
